@@ -1,35 +1,27 @@
-name: 打包Keep镜像离线tar包
+name: 导出Keep镜像离线Tar包
 on:
-  workflow_dispatch: # 手动点击运行
+  workflow_dispatch: # 手动一键执行
   schedule:
-    - cron: "0 17 * * *"
+    - cron: "0 17 * * *" # 每日凌晨自动打包
 
 jobs:
-  save:
+  export_tar:
     runs-on: ubuntu-latest
     steps:
-      - name: 拉取官方镜像
+      - name: 拉取官方Keep镜像
         run: |
           docker pull us-central1-docker.pkg.dev/keephq/keep/keep-api:latest
           docker pull us-central1-docker.pkg.dev/keephq/keep/keep-ui:latest
-      
-      - name: 导出离线tar包
+
+      - name: 导出为离线tar文件
         run: |
           docker save -o keep-api.tar us-central1-docker.pkg.dev/keephq/keep/keep-api:latest
           docker save -o keep-ui.tar us-central1-docker.pkg.dev/keephq/keep/keep-ui:latest
 
-      # 自动生成时间戳版本tag，解决Release必须有tag的报错
-      - name: Generate tag name
-        id: taggen
-        run: echo "TAG=v$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
-
-      - name: 上传tar包到GitHub Release
-        uses: softprops/action-gh-release@v1
+      - name: 上传打包文件到任务产物
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ env.TAG }}
-          files: |
+          name: keep-offline-images
+          path: |
             keep-api.tar
             keep-ui.tar
-          overwrite: true
-        env:
-          GITHUB_TOKEN: ${{ github.TOKEN }}
