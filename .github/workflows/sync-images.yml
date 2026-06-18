@@ -1,0 +1,31 @@
+name: 自动同步Keep镜像到阿里云ACR
+on:
+  workflow_dispatch: # 支持手动一键执行同步
+  schedule:
+    - cron: "0 17 * * *" # 每天凌晨1点自动同步最新镜像
+
+jobs:
+  sync_task:
+    runs-on: ubuntu-latest
+    steps:
+      # 登录阿里云ACR仓库
+      - name: Login ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ACR_REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      # 同步keep-api镜像
+      - name: Sync keep-api
+        run: |
+          docker pull us-central1-docker.pkg.dev/keephq/keep/keep-api:latest
+          docker tag us-central1-docker.pkg.dev/keephq/keep/keep-api:latest ${{ secrets.ACR_REGISTRY }}/myjeep/keep-api:latest
+          docker push ${{ secrets.ACR_REGISTRY }}/myjeep/keep-api:latest
+
+      # 同步keep-ui镜像
+      - name: Sync keep-ui
+        run: |
+          docker pull us-central1-docker.pkg.dev/keephq/keep/keep-ui:latest
+          docker tag us-central1-docker.pkg.dev/keephq/keep/keep-ui:latest ${{ secrets.ACR_REGISTRY }}/myjeep/keep-ui:latest
+          docker push ${{ secrets.ACR_REGISTRY }}/myjeep/keep-ui:latest
