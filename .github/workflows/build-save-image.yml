@@ -1,0 +1,28 @@
+name: 打包Keep镜像离线tar包
+on:
+  workflow_dispatch: # 手动点按钮打包
+  schedule:
+    - cron: "0 17 * * *" # 每日自动更新
+
+jobs:
+  save:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取官方镜像
+        run: |
+          docker pull us-central1-docker.pkg.dev/keephq/keep/keep-api:latest
+          docker pull us-central1-docker.pkg.dev/keephq/keep/keep-ui:latest
+      
+      - name: 导出离线tar包
+        run: |
+          docker save -o keep-api.tar us-central1-docker.pkg.dev/keephq/keep/keep-api:latest
+          docker save -o keep-ui.tar us-central1-docker.pkg.dev/keephq/keep/keep-ui:latest
+      
+      - name: 上传到Release供下载
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            keep-api.tar
+            keep-ui.tar
+        env:
+          GITHUB_TOKEN: ${{ github.TOKEN }}
